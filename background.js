@@ -201,21 +201,3 @@ chrome.storage.onChanged.addListener(async (changes) => {
         updateBlockedSites();
     }
 });
-
-// reset timer stuff if new session is created.
-chrome.runtime.onStartup.addListener(()=> {
-    resetTimer();
-    chrome.storage.sync.get('reminderInterval', async (data) => {
-        const interval = data.reminderInterval || 90; // default to 1 hour and a half
-        chrome.storage.sync.set({ reminderInterval: interval });
-        await createReminder(interval);
-    });
-});
-chrome.runtime.onInstalled.addListener(()=> {
-    resetTimer();
-    chrome.storage.sync.get('reminderInterval', async (data) => {
-        const interval = data.reminderInterval || 90; // default to 1 hour and a half
-        chrome.storage.sync.set({ reminderInterval: interval });
-        await createReminder(interval);
-    });
-});
