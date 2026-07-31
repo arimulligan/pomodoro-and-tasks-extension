@@ -26,25 +26,12 @@ function updateBlockedSites() {
             chrome.declarativeNetRequest.updateDynamicRules({
                 removeRuleIds: oldRuleIds,
                 addRules: newRules
-            });
-        });
-    });
-}
-
-function blockCurrentURL(mode) {
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        const url = tabs[0].url;
-        if (url) {
-            const blockedWebsites = "blockedSites" + mode;
-            chrome.storage.sync.get([blockedWebsites], function (result) {
-                let blockedSites = result[blockedWebsites] || [];
-                // Add the site if it's not already in the list
-                if (!blockedSites.includes(url)) {
-                    blockedSites.push(url);
-                    chrome.storage.sync.set({ [blockedWebsites]: blockedSites });
+            }, function () {
+                if (chrome.runtime.lastError) {
+                    console.error("Error updating dynamic rules:", chrome.runtime.lastError);
                 }
             });
-        }
+        });
     });
 }
 
@@ -74,6 +61,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         updateIcon("work");
             
         // Create alarms for the first work session and update icon every minute
+        chrome.alarms.clearAll();
         chrome.alarms.create("work", { delayInMinutes: workDuration });
         chrome.alarms.create("updateIcon", { delayInMinutes: 1, periodInMinutes: 1 }); // Update icon every minute
 
@@ -82,19 +70,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.sync.set({ mode: mode });
         chrome.storage.sync.set({ timer: true });
         sendResponse({ status: isWorking ? "Started work mode!" : "Started rest mode!"});
+        return true;
     } else if (request.cmd === 'STOP_TIMER') {
         resetTimer();
         sendResponse({ status: 'success' });
+        return true;
     } else if (request.cmd === 'SKIP_CYCLE') {
         skipCycle();
-    } else if (request.cmd === 'BLOCK_CURRENT_URL') {
-        blockCurrentURL(request.mode);
-    } else if (request.cmd === 'CLOSE_TAB') {
-        closeCurrentTab(request.milliseconds);
-    } else if (request.cmd === 'SHOW_DOVE') {
-        runReminderLogic();
     }
-    return true;
 });
 
 // Helper function to send the current timer state to the popup
@@ -166,8 +149,7 @@ function resetTimer() {
   currentCycle = 0;
   remainingTime = 0;
   chrome.action.setBadgeText({ text: "" });
-  chrome.alarms.clear("work");
-  chrome.alarms.clear("rest");
+  chrome.alarms.clearAll();
   if (sendTimerSecs) clearInterval(sendTimerSecs);
   chrome.storage.sync.set({ timer: false });
 }

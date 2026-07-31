@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px;">Strict Mode</h3>
                     <div class="column-container">
                         <div class="row-container">
-                            <h4>Get tempted to unblock sites</h4>
+                            <h4>Can unblock sites</h4>
                             <label class="switch">
                                 <input type="checkbox" id="unblockOnOff" checked>
                                 <span class="slider round"></span>
@@ -594,24 +594,24 @@ function doChangedTab(isWork){
                     if (showEndPomodoro) {
                         endPomodoroButton.style.display = "block";
                         endPomodoroButton.innerHTML = `Switch to ${modeString.toLowerCase()} mode`;
-                        endPomodoroButton.addEventListener('click', ()=> {
+                        endPomodoroButton.onclick = ()=> {
                             chrome.storage.sync.set({ mode: modeString });
-                        });
+                        };
                     } else {
                         endPomodoroButton.style.display = "none";
                     }
                 } else {
                     if (showEndCycle) {
                         endCycle.style.display = "block";
-                        endCycle.addEventListener('click', ()=> {
+                        endCycle.onclick = ()=> {
                             chrome.runtime.sendMessage({ cmd: 'SKIP_CYCLE' });
-                        });
+                        };
                     } else {
                         endCycle.style.display = "none";
                     }
                     if (showEndPomodoro) {
                         endPomodoroButton.style.display = "block";
-                        endPomodoroButton.addEventListener('click', ()=> {
+                        endPomodoroButton.onclick = ()=> {
                             chrome.runtime.sendMessage({ cmd: 'STOP_TIMER' }, (response)=> {
                                 if (chrome.runtime.lastError) {
                                     console.error('Error in Dove extension:', chrome.runtime.lastError);
@@ -619,7 +619,7 @@ function doChangedTab(isWork){
                                     chrome.storage.sync.set({ mode: modeString });
                                 }
                             });
-                        });
+                        };
                     } else {
                         endPomodoroButton.style.display = "none";
                     }
@@ -656,13 +656,13 @@ function loadChangedRestTab() {
 function loadSettings() {
     function onOrOffButton(storageVar, elementId) {
         const toggleInteractionElem = document.getElementById(elementId);
-        toggleInteractionElem.addEventListener('change', () => {
-            // not working yet, but will be fixed in next update
         chrome.storage.local.get(storageVar, (result) => {
             const stored = result[storageVar];
             toggleInteractionElem.checked = stored === undefined ? true : stored;
         });
-        });
+        toggleInteractionElem.onclick = () => {
+            chrome.storage.local.set({ [storageVar]: toggleInteractionElem.checked });
+        };
     }
 
     onOrOffButton('showEndPomodoro', 'endPomodoroOnOff');
