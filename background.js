@@ -74,6 +74,12 @@ function loadState() {
     });
 }
 
+function clearTimers() {
+    chrome.alarms.clear("work");
+    chrome.alarms.clear("rest");
+    chrome.alarms.clear("updateIcon");
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     (async () => {
         await loadState(); // rehydrate before acting, in case the worker just woke up
@@ -86,7 +92,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             remainingTime = workDuration * 60; // Start with work time
             updateIcon("work");
 
-            chrome.alarms.clearAll();
+            clearTimers();
             chrome.alarms.create("work", { delayInMinutes: workDuration });
             chrome.alarms.create("updateIcon", { delayInMinutes: 1, periodInMinutes: 1 });
 
@@ -181,7 +187,7 @@ function resetTimer() {
     currentCycle = 0;
     remainingTime = 0;
     chrome.action.setBadgeText({ text: "" });
-    chrome.alarms.clearAll();
+    clearTimers();
     if (sendTimerSecs) clearInterval(sendTimerSecs);
     chrome.storage.sync.set({ timer: false });
     chrome.storage.session.remove([

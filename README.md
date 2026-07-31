@@ -34,13 +34,14 @@ If you want to edit, contribute, or make your own version of this Extension, her
 
 4. The extension will be loaded into Chrome, and you should see its icon in the toolbar.
 
-## Development TODO
+## Development
 This project uses Chrome Extension V3 APIs, including:
 - `chrome.runtime`
 - `chrome.alarms`
 - `chrome.notifications`
 - `chrome.storage.sync`
 - `chrome.action`
+- `chrome.session`
 
 If you want to modify or contribute to this project, follow these steps:
 

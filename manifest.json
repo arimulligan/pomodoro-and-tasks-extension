@@ -4,8 +4,7 @@
     "description": "The Dove blocks websites depending on the rest/work interval, with a built-in task list with a dove as your mascot!",
     "manifest_version": 3,
     "author": "Arianna Mulligan",
-    "permissions": ["storage", "activeTab", "tabs",
-    "declarativeNetRequest", "declarativeNetRequestWithHostAccess", "notifications", "alarms"],
+    "permissions": ["storage", "declarativeNetRequest", "declarativeNetRequestWithHostAccess", "notifications", "alarms"],
     "background": {
         "service_worker": "background.js"
     },
