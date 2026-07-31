@@ -35,14 +35,6 @@ function updateBlockedSites() {
     });
 }
 
-function closeCurrentTab(milliseconds) {
-    setTimeout(() => {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.remove(tabs[0].id);
-        });  
-    }, milliseconds);
-}
-
 // listens and executes all action messages
 let currentCycle = 0;
 let totalCycles = 0;
@@ -51,51 +43,86 @@ let restDuration = 0; // mins
 let remainingTime = 0; // in seconds
 let isWorking = true;
 let sendTimerSecs;
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.cmd === 'START_TIMER') {
-        totalCycles = request.cycles;
-        workDuration = request.workDuration;
-        restDuration = request.restDuration;
-        currentCycle = 0;
-        remainingTime = workDuration * 60; // Start with work time
-        updateIcon("work");
-            
-        // Create alarms for the first work session and update icon every minute
-        chrome.alarms.clearAll();
-        chrome.alarms.create("work", { delayInMinutes: workDuration });
-        chrome.alarms.create("updateIcon", { delayInMinutes: 1, periodInMinutes: 1 }); // Update icon every minute
 
-        isWorking = true;
-        const mode = isWorking ? 'Work' : 'Rest';
-        chrome.storage.sync.set({ mode: mode });
-        chrome.storage.sync.set({ timer: true });
-        sendResponse({ status: isWorking ? "Started work mode!" : "Started rest mode!"});
-        return true;
-    } else if (request.cmd === 'STOP_TIMER') {
-        resetTimer();
-        sendResponse({ status: 'success' });
-        return true;
-    } else if (request.cmd === 'SKIP_CYCLE') {
-        skipCycle();
-    }
+// Save current state to session storage so it survives service worker restarts
+function saveState() {
+    chrome.storage.session.set({
+        currentCycle,
+        totalCycles,
+        workDuration,
+        restDuration,
+        remainingTime,
+        isWorking
+    });
+}
+
+// Load state back into memory. Returns a Promise so callers can await it.
+function loadState() {
+    return new Promise((resolve) => {
+        chrome.storage.session.get(
+            ['currentCycle', 'totalCycles', 'workDuration', 'restDuration', 'remainingTime', 'isWorking'],
+            (result) => {
+                currentCycle = result.currentCycle ?? 0;
+                totalCycles = result.totalCycles ?? 0;
+                workDuration = result.workDuration ?? 0;
+                restDuration = result.restDuration ?? 0;
+                remainingTime = result.remainingTime ?? 0;
+                isWorking = result.isWorking ?? true;
+                resolve();
+            }
+        );
+    });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    (async () => {
+        await loadState(); // rehydrate before acting, in case the worker just woke up
+
+        if (request.cmd === 'START_TIMER') {
+            totalCycles = request.cycles;
+            workDuration = request.workDuration;
+            restDuration = request.restDuration;
+            currentCycle = 0;
+            remainingTime = workDuration * 60; // Start with work time
+            updateIcon("work");
+
+            chrome.alarms.clearAll();
+            chrome.alarms.create("work", { delayInMinutes: workDuration });
+            chrome.alarms.create("updateIcon", { delayInMinutes: 1, periodInMinutes: 1 });
+
+            isWorking = true;
+            const mode = isWorking ? 'Work' : 'Rest';
+            chrome.storage.sync.set({ mode: mode });
+            chrome.storage.sync.set({ timer: true });
+            saveState();
+            sendResponse({ status: isWorking ? "Started work mode!" : "Started rest mode!" });
+        } else if (request.cmd === 'STOP_TIMER') {
+            resetTimer();
+            sendResponse({ status: 'success' });
+        } else if (request.cmd === 'SKIP_CYCLE') {
+            skipCycle();
+        }
+    })();
+
+    return true; // async response path is always possible now, so always keep the channel open
 });
 
 // Helper function to send the current timer state to the popup
 function sendTimerState() {
     chrome.runtime.sendMessage({
-      action: "updateTimerState",
-      remainingTime,
-      totalCycles,
-      currentCycle,
-      isWorking
+        action: "updateTimerState",
+        remainingTime,
+        totalCycles,
+        currentCycle,
+        isWorking
     });
 }
 
 function updateModeSendNotif(isPomodoro) {
     const mode = isWorking ? 'Work' : 'Rest';
     chrome.storage.sync.set({ mode: mode });
-    const message = isPomodoro ? `Time is up... get ready to ${mode.toLowerCase()}!` 
-    : "You've finished your current pomodoro! Rest mode will be on until your next work session.";
+    const message = isPomodoro ? `Time is up... get ready to ${mode.toLowerCase()}!`
+        : "You've finished your current pomodoro! Rest mode will be on until your next work session.";
     chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/doveLogo128.png',
@@ -105,25 +132,29 @@ function updateModeSendNotif(isPomodoro) {
     });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    await loadState(); // rehydrate in case the worker restarted between alarms
+
     if (alarm.name === "work") {
         currentCycle++;
-        remainingTime = restDuration * 60; // set remaining time for rest
+        remainingTime = restDuration * 60;
         updateIcon("rest");
         chrome.alarms.create("rest", { delayInMinutes: restDuration });
         isWorking = false;
+        saveState();
         sendTimerState();
         updateModeSendNotif(true);
     } else if (alarm.name === "rest") {
         if (currentCycle < totalCycles) {
-          remainingTime = workDuration * 60; // set remaining time for work
-          updateIcon("work");
-          chrome.alarms.create("work", { delayInMinutes: workDuration });
-          isWorking = true;
-          updateModeSendNotif(true);
+            remainingTime = workDuration * 60;
+            updateIcon("work");
+            chrome.alarms.create("work", { delayInMinutes: workDuration });
+            isWorking = true;
+            saveState();
+            updateModeSendNotif(true);
         } else {
-          resetTimer();
-          updateModeSendNotif(false);
+            resetTimer();
+            updateModeSendNotif(false);
         }
         sendTimerState();
     } else if (alarm.name === "updateIcon") {
@@ -132,26 +163,31 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 function updateIcon(type) {
-    const minutesLeft = Math.ceil(remainingTime / 60); // Get the remaining time in minutes
-    chrome.action.setBadgeText({ text: String(minutesLeft)+"m" });
+    const minutesLeft = Math.ceil(remainingTime / 60);
+    chrome.action.setBadgeText({ text: String(minutesLeft) + "m" });
     chrome.action.setBadgeBackgroundColor({ color: type === "work" ? "#F2A007" : "#0388A6" });
 
     if (remainingTime > 0) {
         if (sendTimerSecs) clearInterval(sendTimerSecs);
         sendTimerSecs = setInterval(() => {
-            remainingTime--; // Decrement the remaining time every second
+            remainingTime--;
+            saveState(); // keep session storage in sync every tick, so a restart mid-countdown resumes close to correct
             sendTimerState();
         }, 1000);
     }
 }
 
 function resetTimer() {
-  currentCycle = 0;
-  remainingTime = 0;
-  chrome.action.setBadgeText({ text: "" });
-  chrome.alarms.clearAll();
-  if (sendTimerSecs) clearInterval(sendTimerSecs);
-  chrome.storage.sync.set({ timer: false });
+    currentCycle = 0;
+    remainingTime = 0;
+    chrome.action.setBadgeText({ text: "" });
+    chrome.alarms.clearAll();
+    if (sendTimerSecs) clearInterval(sendTimerSecs);
+    chrome.storage.sync.set({ timer: false });
+    chrome.storage.session.remove([
+        'currentCycle', 'totalCycles', 'workDuration',
+        'restDuration', 'remainingTime', 'isWorking'
+    ]);
 }
 
 function skipCycle() {
@@ -159,26 +195,24 @@ function skipCycle() {
         // Skip the current work session, switch to rest
         remainingTime = restDuration * 60;
         updateIcon("rest");
-        chrome.alarms.clear("work"); // Clear the current work alarm
-        chrome.alarms.create("rest", { delayInMinutes: restDuration }); // Start the rest period
+        chrome.alarms.clear("work");
+        chrome.alarms.create("rest", { delayInMinutes: restDuration });
         isWorking = false;
     } else {
-        // Skip the current rest session, switch to work
         remainingTime = workDuration * 60;
         updateIcon("work");
-        chrome.alarms.clear("rest"); // Clear the current rest alarm
-        chrome.alarms.create("work", { delayInMinutes: workDuration }); // Start the work period
+        chrome.alarms.clear("rest");
+        chrome.alarms.create("work", { delayInMinutes: workDuration });
         isWorking = true;
-        currentCycle++; // Increase the cycle count when work starts again
+        currentCycle++;
     }
-    sendTimerState(); // Send the updated timer state to the popup
-    updateModeSendNotif(true); // Send a notification about the mode switch
+    saveState();
+    sendTimerState();
+    updateModeSendNotif(true);
 }
-
 
 // LISTENERS
 chrome.storage.onChanged.addListener(async (changes) => {
-    // for URL blocking
     if (changes.blockedSitesRest || changes.blockedSitesWork || changes.mode) {
         updateBlockedSites();
     }
