@@ -1,7 +1,7 @@
 {
-    "name": "Pomodoro Timer with Website Blocking",
-    "version": "1.1.0",
-    "description": "The Dove blocks websites depending on the rest/work interval, with a built-in task list with a dove as your mascot!",
+    "name": "Dove: Pomodoro Timer & Website Blocker",
+    "version": "1.0.0",
+    "description": "Auto-blocks distracting sites during work sprints, unblocks during breaks. Pomodoro timer + task list + a dove mascot cheering you on.",
     "manifest_version": 3,
     "author": "Arianna Mulligan",
     "permissions": ["storage", "declarativeNetRequest", "declarativeNetRequestWithHostAccess", "notifications", "alarms"],
@@ -10,7 +10,7 @@
     },
     "action": {
         "default_popup": "/popupWindow/popupHTML.html",
-        "default_title": "Pomodoro Timer with Website Blocking",
+        "default_title": "Dove: Pomodoro Timer & Website Blocker",
         "default_icon": {
             "16": "icons/doveLogo16.png",
             "48": "icons/doveLogo48.png",
