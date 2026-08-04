@@ -41,7 +41,6 @@ This project uses Chrome Extension V3 APIs, including:
 - `chrome.notifications`
 - `chrome.storage.sync`
 - `chrome.action`
-- `chrome.session`
 
 If you want to modify or contribute to this project, follow these steps:
 

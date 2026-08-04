@@ -1,70 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const content = {
-        goalsTab: `<h2>My Goals</h2>
-                <ul id="taskList">
-                    <div>
-                        <h3 draggable="false" id="h3NotDone">Not Done</h3>
-                        <input type="text" id="taskInputNotDone" placeholder="Add a new task..." draggable=false style="display: inline-block;">
-                    </div>
-                    <div>
-                        <h3 draggable="false" id="h3Doing">Doing</h3>
-                        <input type="text" id="taskInputDoing" placeholder="Add a current task..." draggable=false style="display: inline-block;">
-                    </div>
-                    <div>
-                        <h3 draggable="false" id="h3Done">Done</h3>
-                        <input type="text" id="taskInputDone" placeholder="Add an old task..." draggable=false style="display: inline-block;">
-                    </div>
-                </ul>`,
-        workTab: `<h2>Work</h2>
-                <div class="column-container">
-                <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px; width: 100%;">Pomodoro</h3>
-                    <div class="row-container" id="displayCountdown">
-                        <div class="column-container">
-                            <div class="dove-text" style="align-self: flex-start;">Time Left:</div>
-                            <div class="dove-countdown-before" id="countdownBefore">00:00</div>
-                            <div class="dove-countdown" id="countdownDuring">00:00</div>
-                            <div class="dove-countdown-after" id="countdownAfter">00:00</div>
-                            <div></div><div></div>
-                        </div>
-                        <div class="column-container">
-                            <div class="row-container">
-                                <div class="dove-text" style="align-self: flex-start;" id="cyclesText">Cycles left:</div>
-                                <div id="cyclesDisplay" class="dove-countdown">4</div>
-                            </div>
-                            <img src="/images/standingDoveWaving.gif" alt="Standing dove waving" width="200" height="133">
-                        </div>
-                    </div>
-                    <div class="column-container" id="optionsCountdown">
-                        <div class="row-container">
-                            <h4 draggable="false" id="blockerHeader">Cycles: </h4>
-                            <input type="number" id="cycles" min="1" value="4" draggable=false style="display: inline-block;">
-                        </div>
-                        
-                        <div class="row-container">
-                            <h4 draggable="false" id="blockerHeader">Work Interval (minutes): </h4>
-                            <input type="number" id="work" min="1" value="25" draggable=false style="display: inline-block;">
-                        </div>
 
-                        <div class="row-container">
-                            <h4 draggable="false" id="blockerHeader">Rest Interval (minutes): </h4>
-                            <input type="number" id="rest" min="1" value="5" draggable=false style="display: inline-block;">
-                        </div>
-                        <button id="startBtn" class="edit-buttons">Start Timer</button>
-                    </div>
-                </div>
-                <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px;">Website blocker</h3>
-                <ul id="taskList">
-                    <div style="border: none;">
-                        <h4 draggable="false" id="blockerHeader">Block the websites keyword</h4>
-                        <input type="text" id="url" placeholder="Enter word here..." draggable=false style="display: inline-block;">
-                    </div>
-                </ul>`,
-        restTab: `<h2>Rest</h2>
-        <div class="column-container">
-        <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px; width: 100%;">Pomodoro</h3>
+    // ---- Shared markup builder (was duplicated between workTab / restTab) ----
+    function pomodoroBlock({ showTimeLeftId, showOptions }) {
+        return `
         <div class="row-container" id="displayCountdown">
             <div class="column-container">
-                <div class="dove-text" style="align-self: flex-start;" id="timeLeftText">Time Left:</div>
+                <div class="dove-text" style="align-self: flex-start;" id="${showTimeLeftId}">Time Left:</div>
                 <div class="dove-countdown-before" id="countdownBefore">00:00</div>
                 <div class="dove-countdown" id="countdownDuring">00:00</div>
                 <div class="dove-countdown-after" id="countdownAfter">00:00</div>
@@ -78,14 +19,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="/images/standingDoveWaving.gif" alt="Standing dove waving" width="200" height="133">
             </div>
         </div>
-        </div>
+        ${showOptions ? `
+        <div class="column-container" id="optionsCountdown">
+            <div class="row-container">
+                <h4 draggable="false" class="blocker-header">Cycles: </h4>
+                <input type="number" id="cycles" min="1" value="4" draggable="false" style="display: inline-block;">
+            </div>
+            <div class="row-container">
+                <h4 draggable="false" class="blocker-header">Work Interval (minutes): </h4>
+                <input type="number" id="work" min="1" value="25" draggable="false" style="display: inline-block;">
+            </div>
+            <div class="row-container">
+                <h4 draggable="false" class="blocker-header">Rest Interval (minutes): </h4>
+                <input type="number" id="rest" min="1" value="5" draggable="false" style="display: inline-block;">
+            </div>
+            <button id="startBtn" class="edit-buttons">Start Timer</button>
+        </div>` : ''}`;
+    }
+
+    function websiteBlockerBlock() {
+        return `
         <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px;">Website blocker</h3>
         <ul id="taskList">
             <div style="border: none;">
-                <h4 draggable="false" id="blockerHeader">Block the websites keyword</h4>
-                <input type="text" id="url" placeholder="Enter word here..." draggable=false style="display: inline-block;">
+                <h4 draggable="false" class="blocker-header">Block the websites keyword</h4>
+                <input type="text" id="url" placeholder="Enter word here..." draggable="false" style="display: inline-block;">
             </div>
-        </ul>`,
+        </ul>`;
+    }
+
+    const content = {
+        goalsTab: `<h2>My Goals</h2>
+                <ul id="taskList">
+                    <div>
+                        <h3 draggable="false" id="h3NotDone">Not Done</h3>
+                        <input type="text" id="taskInputNotDone" placeholder="Add a new task..." draggable="false" style="display: inline-block;">
+                    </div>
+                    <div>
+                        <h3 draggable="false" id="h3Doing">Doing</h3>
+                        <input type="text" id="taskInputDoing" placeholder="Add a current task..." draggable="false" style="display: inline-block;">
+                    </div>
+                    <div>
+                        <h3 draggable="false" id="h3Done">Done</h3>
+                        <input type="text" id="taskInputDone" placeholder="Add an old task..." draggable="false" style="display: inline-block;">
+                    </div>
+                </ul>`,
+        workTab: `<h2>Work</h2>
+                <div class="column-container">
+                <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px; width: 100%;">Pomodoro</h3>
+                    ${pomodoroBlock({ showTimeLeftId: 'timeLeftText', showOptions: true })}
+                </div>
+                ${websiteBlockerBlock()}`,
+        restTab: `<h2>Rest</h2>
+        <div class="column-container">
+        <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px; width: 100%;">Pomodoro</h3>
+            ${pomodoroBlock({ showTimeLeftId: 'timeLeftText', showOptions: false })}
+        </div>
+        ${websiteBlockerBlock()}`,
         settingsTab: `<h2>Settings</h2>
                     <h3 style="font-size:20px; border:5px solid #04668C; border-radius: 10px;">Strict Mode</h3>
                     <div class="column-container">
@@ -97,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </label>
                         </div>
                         <div class="row-container">
-                            <h4>Can end rest/work cycle early</h4>
+                            <h4>Can skip rest/work cycles</h4>
                             <label class="switch">
                                 <input type="checkbox" id="endCycleOnOff" checked>
                                 <span class="slider round"></span>
@@ -114,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `
     };
 
-    // <button id="redirectBtn" class="edit-buttons">Redirect websites</button> to go below edittimerBtn (if i have time)
     const loadContent = {
         goalsTab: loadTasks,
         workTab: loadWorkTab,
@@ -122,27 +111,28 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsTab: loadSettings
     };
 
+    function wrongContentBlock({ heading, statusText, buttonId, buttonLabel, verb }) {
+        return `<div class="bg-container other">
+        <h2>${heading}</h2>
+        <div class="row-container">
+            <div class="dove-text" style="border-top-right-radius: 0px; margin-right: 10px;">${statusText}</div>
+            <img src="/images/standingBird.png" alt="Standing dove" width="200" height="185">
+        </div>
+        <button id="${buttonId}" class="edit-buttons" style="width: 200px;">${buttonLabel}</button>
+        <button id="endPomodoro" class="edit-buttons" style="width: 250px;">End pomodoro and ${verb}</button>
+        </div>
+        `;
+    }
+
     const wrongContent = {
-        workTab: `<div class="bg-container other">
-        <h2>Work</h2>
-        <div class="row-container">
-            <div class="dove-text" style="border-top-right-radius: 0px; margin-right: 10px;">You're in rest mode!</div>
-            <img src="/images/standingBird.png" alt="Standing dove" width="200" height="185">
-        </div>
-        <button id="endCycletoWork" class="edit-buttons" style="width: 200px;">End rest cycle early</button>
-        <button id="endPomodoro" class="edit-buttons"  style="width: 200px;">End pomodoro and work</button>
-        </div>
-        `,
-        restTab: `<div class="bg-container other">
-        <h2>Rest</h2>
-        <div class="row-container">
-            <div class="dove-text" style="border-top-right-radius: 0px; margin-right: 10px;">You're in work mode!</div>
-            <img src="/images/standingBird.png" alt="Standing dove" width="200" height="185">
-        </div>
-        <button id="endCycletoRest" class="edit-buttons"  style="width: 200px;">End work cycle early</button>
-        <button id="endPomodoro" class="edit-buttons"  style="width: 200px;">End pomodoro and rest</button>
-        </div>
-        `,
+        workTab: wrongContentBlock({
+            heading: 'Work', statusText: "You're in rest mode!",
+            buttonId: 'endCycletoWork', buttonLabel: 'Skip rest cycle', verb: 'work'
+        }),
+        restTab: wrongContentBlock({
+            heading: 'Rest', statusText: "You're in work mode!",
+            buttonId: 'endCycletoRest', buttonLabel: 'Skip work cycle', verb: 'rest'
+        }),
     };
 
     const loadWrongContent = {
@@ -152,22 +142,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelector('.boxes').addEventListener('click', (event) => {
         const button = event.target.closest('.unselected-box');
-        if (button) {
-            const targetPage = button.getAttribute('data-target');
-            if (targetPage === 'workTab' || targetPage === 'restTab') {
-                chrome.storage.sync.get('mode', (data) => {
-                    const mode = data.mode;
-                    if (mode === 'Rest' && targetPage === 'workTab' ||
-                        mode === 'Work' && targetPage === 'restTab'
-                    ) {
-                        changeMainContent(targetPage, wrongContent, loadWrongContent, button);
-                    } else {
-                        changeMainContent(targetPage, content, loadContent, button);
-                    }
-                });
-            } else {
-                changeMainContent(targetPage, content, loadContent, button);
-            }
+        if (!button) return;
+
+        const targetPage = button.getAttribute('data-target');
+        if (targetPage === 'workTab' || targetPage === 'restTab') {
+            chrome.storage.sync.get('mode', (data) => {
+                const mode = data.mode;
+                const isMismatched =
+                    (mode === 'Rest' && targetPage === 'workTab') ||
+                    (mode === 'Work' && targetPage === 'restTab');
+                if (isMismatched) {
+                    changeMainContent(targetPage, wrongContent, loadWrongContent, button);
+                } else {
+                    changeMainContent(targetPage, content, loadContent, button);
+                }
+            });
+        } else {
+            changeMainContent(targetPage, content, loadContent, button);
         }
     });
 
@@ -177,15 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     chrome.storage.onChanged.addListener((changes) => {
-        if (changes.mode) {
-            if (changes.mode.newValue === 'Rest') {
-                const button = document.getElementById('restIcon');
-                changeMainContent('restTab', content, loadContent, button);
-            }
-            else if (changes.mode.newValue === 'Work') {
-                const button = document.getElementById('workIcon');
-                changeMainContent('workTab', content, loadContent, button);
-            }
+        if (!changes.mode) return;
+        if (changes.mode.newValue === 'Rest') {
+            changeMainContent('restTab', content, loadContent, document.getElementById('restIcon'));
+        } else if (changes.mode.newValue === 'Work') {
+            changeMainContent('workTab', content, loadContent, document.getElementById('workIcon'));
         }
     });
 
@@ -202,23 +189,22 @@ function changeMainContent(targetPage, content, loadContent, button) {
         btn.classList.add('unselected-box');
     });
     if (button) {
-        // Add selected-box class to the clicked button
         button.classList.remove('unselected-box');
         button.classList.add('selected-box');
     }
 }
 
-// GOALS TAB
+// ---------------- GOALS TAB ----------------
 function loadTasks() {
-    document.getElementById('taskInputNotDone').addEventListener('keydown', (event) =>{ if (event.key === 'Enter') {addTask('NotDone');}});
-    document.getElementById('taskInputDoing').addEventListener('keydown', (event) =>{ if (event.key === 'Enter') {addTask('Doing');}});
-    document.getElementById('taskInputDone').addEventListener('keydown', (event) =>{ if (event.key === 'Enter') {addTask('Done');}});
+    ['NotDone', 'Doing', 'Done'].forEach(section => {
+        document.getElementById(`taskInput${section}`).addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') addTask(section);
+        });
+    });
 
     const tasks = getTasksFromStorage();
     Object.keys(tasks).forEach(section => {
-        tasks[section].forEach(task => {
-            addTaskToDOM(section, task);
-        });
+        tasks[section].forEach(task => addTaskToDOM(section, task));
     });
     makeTaskDraggable(document.querySelector('#taskList'));
 }
@@ -227,22 +213,17 @@ function addTask(section) {
     const taskInput = document.getElementById(`taskInput${section}`);
     const taskList = getTasksFromStorage();
 
-    if (!taskList[section]) {
-        taskList[section] = [];
-    }
+    if (!taskList[section]) taskList[section] = [];
 
-    if (taskInput.value.trim() !== '') {
-        const task = {
-            id: `task${taskList[section].length}`,
-            content: taskInput.value
-        };
+    const value = taskInput.value.trim();
+    if (value === '') return;
 
-        taskList[section].push(task);
-        saveTasksToStorage(taskList);
+    const task = { id: `task${taskList[section].length}`, content: value };
+    taskList[section].push(task);
+    saveTasksToStorage(taskList);
 
-        addTaskToDOM(section, task);
-        taskInput.value = '';
-    }
+    addTaskToDOM(section, task);
+    taskInput.value = '';
 }
 
 function addTaskToDOM(section, task) {
@@ -255,20 +236,18 @@ function addTaskToDOM(section, task) {
     taskSpan.textContent = task.content;
     taskSpan.contentEditable = true;
     taskSpan.style.cursor = "text";
-    taskSpan.addEventListener('dragstart', (e) => {
-        e.preventDefault(); // make text not draggable (bug fix)
-    });
+    taskSpan.addEventListener('dragstart', (e) => e.preventDefault()); // keep text non-draggable
     taskSpan.addEventListener('click', () => editTask(section, taskSpan));
-    
+
     const deleteButton = document.createElement('button');
-    deleteButton.id = 'deleteButton';
+    deleteButton.className = 'delete-button';
     deleteButton.onclick = () => {
         deleteTask(section, task.id);
-        taskList.parentNode.removeChild(listItem);
+        listItem.parentNode.removeChild(listItem);
     };
 
     const prettyBulletPoint = document.createElement('div');
-    prettyBulletPoint.id = 'bulletPoint';
+    prettyBulletPoint.className = 'bullet-point';
 
     listItem.appendChild(prettyBulletPoint);
     listItem.appendChild(taskSpan);
@@ -279,22 +258,21 @@ function addTaskToDOM(section, task) {
 function editTask(section, taskSpan) {
     const taskList = getTasksFromStorage();
     const task = taskList[section].find(t => t.id === taskSpan.id);
-    if (task !== undefined){
-        taskSpan.focus();
-        // Add blur event to save when done editing
-        taskSpan.addEventListener('blur', () => {
-            if (taskSpan.textContent === "") {
-                deleteTask(section, taskSpan.id);
-            } else {
-                task.content = taskSpan.textContent;
-                taskList[section] = taskList[section].map(t =>
-                    t.id === task.id ? task : t
-                );
-                saveTasksToStorage(taskList);
-            }
-        });
-        
-    }
+    if (!task) return;
+
+    taskSpan.focus();
+    // Use onblur (overwrite) instead of addEventListener so re-editing the same
+    // span never stacks up duplicate blur handlers.
+    taskSpan.onblur = () => {
+        if (taskSpan.textContent === "") {
+            deleteTask(section, taskSpan.id);
+        } else {
+            task.content = taskSpan.textContent;
+            const freshList = getTasksFromStorage();
+            freshList[section] = freshList[section].map(t => (t.id === task.id ? task : t));
+            saveTasksToStorage(freshList);
+        }
+    };
 }
 
 function deleteTask(section, taskId) {
@@ -307,10 +285,7 @@ function getTasksFromStorage() {
     const tasks = localStorage.getItem('tasks');
     if (!tasks || tasks === 'undefined') {
         return {
-            'NotDone': [{
-                id: "task0",
-                content: "Your first task! Drag/drop, edit, or delete this."
-            }],
+            'NotDone': [{ id: "task0", content: "Your first task! Drag/drop, edit, or delete this." }],
             'Doing': [],
             'Done': []
         };
@@ -325,7 +300,6 @@ function saveTasksToStorage(taskList) {
 /**
  * Inspiration from geeksforgeeks.org
  * @param {*} sortableList list to have draggable items
- * @param {*} draggedItem item dragging
  */
 function makeTaskDraggable(sortableList) {
     let draggedItem = null;
@@ -334,9 +308,7 @@ function makeTaskDraggable(sortableList) {
     sortableList.addEventListener("dragstart", (e) => {
         allDraggableElements.forEach((el) => el.style.border = '5px solid #04668C');
         draggedItem = e.target;
-        setTimeout(() => {
-            e.target.style.display = "none";
-        }, 0);
+        setTimeout(() => { e.target.style.display = "none"; }, 0);
     });
 
     sortableList.addEventListener("dragend", (e) => {
@@ -353,38 +325,37 @@ function makeTaskDraggable(sortableList) {
         allDraggableElements.forEach((el) => el.style.border = '5px solid #04668C');
 
         let afterElement = getDragAfterElement(sortableList, e.clientY);
-        if (afterElement) {
-            if (afterElement.tagName === 'LI') {
-                let sibling = afterElement.previousElementSibling;
-                while (sibling && sibling.tagName !== 'DIV') {
-                    sibling = sibling.previousElementSibling;
-                }
-                afterElement = sibling;
-                afterElement.style.border = '5px dashed #04668C';
+        if (!afterElement) return;
+
+        if (afterElement.tagName === 'LI') {
+            let sibling = afterElement.previousElementSibling;
+            while (sibling && sibling.tagName !== 'DIV') {
+                sibling = sibling.previousElementSibling;
             }
-            afterElement.style.border = '5px dashed #04668C';
-            // Insert after the hovered element by using insertBefore and nextSibling
-            try {
-                sortableList.insertBefore(draggedItem, afterElement.nextSibling);
-            } catch (error) {
-                // functionality still works, because it throws the error when it's in a temporarily invliad state (when the user is still hovering)
-            }
-                
+            afterElement = sibling;
+        }
+        if (!afterElement) return;
+
+        afterElement.style.border = '5px dashed #04668C';
+        try {
+            sortableList.insertBefore(draggedItem, afterElement.nextSibling);
+        } catch (error) {
+            // still works — throws only while the DOM is in a transient state during hover
         }
     });
 
     function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll("li:not(.dragging)"), ...container.querySelectorAll(
-            "div:not(.dragging)"
-        ),];
+        const draggableElements = [
+            ...container.querySelectorAll("li:not(.dragging)"),
+            ...container.querySelectorAll("div:not(.dragging)"),
+        ];
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height;
             if (offset < 0 && offset > closest.offset) {
                 return { offset: offset, element: child };
-            } else {
-                return closest;
             }
+            return closest;
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
@@ -394,90 +365,118 @@ function makeTaskDraggable(sortableList) {
         sections.forEach(section => {
             taskList[section] = [];
             const sectionElement = document.querySelector(`h3#h3${section}`).parentNode;
-            item = sectionElement.nextElementSibling;
-            while (item && item.tagName == 'LI') {
+            let item = sectionElement.nextElementSibling; // was missing `let` — leaked to window
+            while (item && item.tagName === 'LI') {
                 const id = item.querySelector('span').id;
                 const content = item.querySelector('span').textContent;
                 taskList[section].push({ id, content });
                 item = item.nextElementSibling;
             }
-            // Reverse the array to maintain the original order
             taskList[section] = taskList[section].reverse();
         });
         saveTasksToStorage(taskList);
     }
 }
 
-// FUNCTIONS FOR WORK AND REST TABS
+// ---------------- WORK / REST TABS ----------------
 function doBlockWebsiteButtons(mode) {
     const setBlockedWebsites = "blockedSites" + mode;
     chrome.storage.sync.get([setBlockedWebsites], function (result) {
         let blockedSites = result[setBlockedWebsites] || [];
-        blockedSites.forEach((site, i) => {
-            addWebsiteToDOM(site, i, setBlockedWebsites);
-        });
+        blockedSites.forEach((site, i) => addWebsiteToDOM(site, i, setBlockedWebsites));
 
-        // adding a new blocked website
         const urlInput = document.getElementById('url');
-        if (urlInput) {
-            urlInput.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    let urlInputValue = urlInput.value.trim();
-                    if (urlInputValue !== '') {
-                        if (urlInputValue.includes(" ")) {
-                            urlInput.placeholder = 'Only one word...'
-                        } else if (blockedSites.includes(urlInputValue)) {
-                            urlInput.placeholder = 'A unique word...'
-                        } else {
-                            // Add the site if it's not already in the list
-                            blockedSites.push(urlInputValue);
-                            chrome.storage.sync.set({ [setBlockedWebsites]: blockedSites }, () => {
-                                addWebsiteToDOM(urlInputValue, blockedSites.length, setBlockedWebsites);
-                            });
-                        }
-                    }
-                    urlInput.value = ''; // Clear the input field after adding
-                }
-            });
-        }
+        if (!urlInput) return;
+
+        urlInput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+            const urlInputValue = urlInput.value.trim();
+            if (urlInputValue === '') return;
+
+            if (urlInputValue.includes(" ")) {
+                urlInput.placeholder = 'Only one word...';
+            } else if (blockedSites.includes(urlInputValue)) {
+                urlInput.placeholder = 'A unique word...';
+            } else {
+                blockedSites.push(urlInputValue);
+                chrome.storage.sync.set({ [setBlockedWebsites]: blockedSites }, () => {
+                    addWebsiteToDOM(urlInputValue, blockedSites.length, setBlockedWebsites);
+                });
+            }
+            urlInput.value = '';
+        });
     });
 
     function addWebsiteToDOM(site, index, setBlockedWebsites) {
         const taskList = document.querySelector('#taskList');
         if (!taskList) return;
+
         const listItem = document.createElement('li');
         listItem.classList = 'notDrag';
         const taskSpan = document.createElement('span');
         taskSpan.textContent = site;
-        
-        const showDeleteBin = 'showDeleteBin';
-        chrome.storage.local.get({ showDeleteBin }, (result) => {
-            const showDeleteBins = result[showDeleteBin];
-            if (showDeleteBins) {
+
+        chrome.storage.local.get('showDeleteBin', (result) => {
+            if (result.showDeleteBin) {
                 const removeSite = document.createElement('button');
-                removeSite.id = 'deleteButton';
+                removeSite.className = 'delete-button';
                 removeSite.onclick = () => {
                     chrome.storage.sync.get([setBlockedWebsites], function (result) {
                         let blockedSites = result[setBlockedWebsites];
                         if (!blockedSites) return;
                         if (blockedSites.length === 1) index = 0;
-                        blockedSites.splice(index, 1); // removing site from list
+                        blockedSites.splice(index, 1);
                         chrome.storage.sync.set({ [setBlockedWebsites]: blockedSites }, () => {
                             taskList.removeChild(listItem);
                         });
-                    })
+                    });
                 };
                 listItem.appendChild(removeSite);
             } else {
                 listItem.style.paddingTop = '10px';
                 listItem.style.paddingBottom = '10px';
             }
-        })
+        });
 
         listItem.appendChild(taskSpan);
         taskList.appendChild(listItem);
     }
 }
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Single, module-level message listener shared by both work/rest tabs, instead
+// of re-registering a new chrome.runtime.onMessage listener every time
+// doCountdownTimer() runs (previously: one extra listener per tab switch,
+// causing duplicate DOM writes over time).
+let countdownTimerRefs = null; // set by doCountdownTimer(); null when not on a countdown tab
+
+chrome.runtime.onMessage.addListener((request) => {
+    if (request.action !== "updateTimerState" || !countdownTimerRefs) return;
+
+    const { countdownBefore, countdownDuring, countdownAfter, cyclesDisplay,
+        displayCountdown, optionsCountdown, countdownExtras, isWork } = countdownTimerRefs;
+    const remainingTime = request.remainingTime;
+
+    countdownBefore.textContent = formatTime(remainingTime - 1);
+    countdownDuring.textContent = formatTime(remainingTime);
+    countdownAfter.textContent = formatTime(remainingTime + 1);
+    cyclesDisplay.textContent = `${request.totalCycles - request.currentCycle}`;
+    displayCountdown.style.display = "flex";
+
+    if (isWork) {
+        if (optionsCountdown) optionsCountdown.style.display = "none";
+    } else {
+        countdownExtras.forEach(el => { if (el) el.style.display = "block"; });
+        const smlBranchImg = document.getElementById('smallBranchURL');
+        if (smlBranchImg) smlBranchImg.remove();
+        displayCountdown.style.justifyContent = "space-between";
+    }
+});
 
 function doCountdownTimer(isWork) {
     const countdownBefore = document.getElementById('countdownBefore');
@@ -487,32 +486,36 @@ function doCountdownTimer(isWork) {
     const cyclesText = document.getElementById('cyclesText');
     const timeLeftText = document.getElementById('timeLeftText');
     const displayCountdown = document.getElementById('displayCountdown');
-    let optionsCountdown;
-    
-    chrome.storage.sync.get('timer', (data) => { 
+    const optionsCountdown = isWork ? document.getElementById('optionsCountdown') : null;
+
+    // Registers/updates the shared listener's target elements for the tab
+    // currently on screen. Cleared when leaving this view (see loadSettings/
+    // loadChangedWorkTab/loadChangedRestTab, which set it back to null).
+    countdownTimerRefs = {
+        countdownBefore, countdownDuring, countdownAfter, cyclesDisplay,
+        displayCountdown, optionsCountdown, isWork,
+        countdownExtras: [countdownAfter, countdownBefore, countdownDuring, timeLeftText]
+    };
+
+    chrome.storage.sync.get('timer', (data) => {
         const isTimerOn = data.timer;
+
         if (isWork) {
-            optionsCountdown = document.getElementById('optionsCountdown');
-            
-            if (!isTimerOn) {
-                displayCountdown.style.display = "none";
-                optionsCountdown.style.display = "flex";
-            } else {
-                displayCountdown.style.display = "flex";
-                optionsCountdown.style.display = "none";
-            }
+            displayCountdown.style.display = isTimerOn ? "flex" : "none";
+            optionsCountdown.style.display = isTimerOn ? "none" : "flex";
+
             document.getElementById('startBtn').addEventListener('click', () => {
                 const cycles = document.getElementById('cycles').value;
                 const workDuration = document.getElementById('work').value;
                 const restDuration = document.getElementById('rest').value;
                 chrome.runtime.sendMessage({
-                  cmd: "START_TIMER",
-                  cycles: parseInt(cycles),
-                  workDuration: parseInt(workDuration),
-                  restDuration: parseInt(restDuration)
+                    cmd: "START_TIMER",
+                    cycles: parseInt(cycles),
+                    workDuration: parseInt(workDuration),
+                    restDuration: parseInt(restDuration)
                 }, (response) => {
                     chrome.storage.sync.set({ mode: 'Work' }, () => {
-                        const message = `${response.status} You will be working for ${workDuration} minutes, and will be blocked out of all specified URLs.`
+                        const message = `${response.status} You will be working for ${workDuration} minutes, and will be blocked out of all specified URLs.`;
                         chrome.notifications.create({
                             type: 'basic',
                             iconUrl: '/icons/doveLogo128.png',
@@ -523,112 +526,78 @@ function doCountdownTimer(isWork) {
                     });
                 });
             });
-        } else {
-            if (!isTimerOn) {
-                cyclesText.innerHTML = "Go into the work tab to start a pomodoro session...";
-                cyclesDisplay.style.display = "none";
-                countdownAfter.style.display = "none";
-                countdownBefore.style.display = "none";
-                countdownDuring.style.display = "none";
-                timeLeftText.style.display = "none";
-    
-                const smallBranchURL = chrome.runtime.getURL('/images/smallBranch.png');
-                const smlBranchImg = document.createElement('img');
-                smlBranchImg.src = smallBranchURL;
-                smlBranchImg.id = "smallBranchURL";
-                smlBranchImg.style.transform = "rotate(90deg)";
-                smlBranchImg.style.left = "7%";
-                smlBranchImg.style.position = "relative";
-                smlBranchImg.style.width = "55vw";
-                displayCountdown.style.justifyContent = "end";
-                displayCountdown.insertBefore(smlBranchImg, displayCountdown.firstChild);
-            }
+        } else if (!isTimerOn) {
+            cyclesText.innerHTML = "Go into the work tab to start a pomodoro session...";
+            cyclesDisplay.style.display = "none";
+            countdownAfter.style.display = "none";
+            countdownBefore.style.display = "none";
+            countdownDuring.style.display = "none";
+            timeLeftText.style.display = "none";
+
+            const smlBranchImg = document.createElement('img');
+            smlBranchImg.src = chrome.runtime.getURL('/images/smallBranch.png');
+            smlBranchImg.id = "smallBranchURL";
+            smlBranchImg.style.transform = "rotate(90deg)";
+            smlBranchImg.style.left = "7%";
+            smlBranchImg.style.position = "relative";
+            smlBranchImg.style.width = "55vw";
+            displayCountdown.style.justifyContent = "end";
+            displayCountdown.insertBefore(smlBranchImg, displayCountdown.firstChild);
         }
     });
-
-    // Listen for updates from the background script
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "updateTimerState") {
-            const remainingTime = request.remainingTime;
-
-            countdownBefore.textContent = formatTime(remainingTime -1);
-            countdownDuring.textContent = formatTime(remainingTime);
-            countdownAfter.textContent = formatTime(remainingTime +1);
-
-            cyclesDisplay.textContent = `${request.totalCycles - request.currentCycle}`;
-            displayCountdown.style.display = "flex";
-            if (isWork) {
-                optionsCountdown.style.display = "none";
-            } else {
-                countdownAfter.style.display = "block";
-                countdownBefore.style.display = "block";
-                countdownDuring.style.display = "block";
-                timeLeftText.style.display = "block";
-                const smlBranchImg = document.getElementById('smallBranchURL');
-                if (smlBranchImg) smlBranchImg.remove();
-                displayCountdown.style.justifyContent = "space-between";
-            }
-        }
-    });
-    
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
 }
 
-function doChangedTab(isWork){
+function doChangedTab(isWork) {
     const modeString = isWork ? "Work" : "Rest";
     const endPomodoroButton = document.getElementById('endPomodoro');
     const endCycle = document.getElementById(`endCycleto${modeString}`);
-    chrome.storage.local.get(['showEndPomodoro', 'showEndCycle'], (result) => {
-        const showEndCycle = result['showEndCycle'] ?? true; // default to true
-        const showEndPomodoro = result['showEndPomodoro'] ?? true;
 
-        if (showEndCycle || showEndPomodoro) {
-            chrome.storage.sync.get('timer', (data) => { 
-                const isTimerOn = data.timer;
-                if (!isTimerOn) {
-                    endCycle.style.display = "none";
-                    if (showEndPomodoro) {
-                        endPomodoroButton.style.display = "block";
-                        endPomodoroButton.innerHTML = `Switch to ${modeString.toLowerCase()} mode`;
-                        endPomodoroButton.onclick = ()=> {
-                            chrome.storage.sync.set({ mode: modeString });
-                        };
-                    } else {
-                        endPomodoroButton.style.display = "none";
-                    }
-                } else {
-                    if (showEndCycle) {
-                        endCycle.style.display = "block";
-                        endCycle.onclick = ()=> {
-                            chrome.runtime.sendMessage({ cmd: 'SKIP_CYCLE' });
-                        };
-                    } else {
-                        endCycle.style.display = "none";
-                    }
-                    if (showEndPomodoro) {
-                        endPomodoroButton.style.display = "block";
-                        endPomodoroButton.onclick = ()=> {
-                            chrome.runtime.sendMessage({ cmd: 'STOP_TIMER' }, (response)=> {
-                                if (chrome.runtime.lastError) {
-                                    console.error('Error in Dove extension:', chrome.runtime.lastError);
-                                } else if (response && response.status === 'success') {
-                                    chrome.storage.sync.set({ mode: modeString });
-                                }
-                            });
-                        };
-                    } else {
-                        endPomodoroButton.style.display = "none";
-                    }
-                }
-            });
-        } else {
+    // Combined into a single storage.local.get instead of one per toggle.
+    chrome.storage.local.get(['showEndPomodoro', 'showEndCycle'], (result) => {
+        const showEndCycle = result.showEndCycle ?? true;
+        const showEndPomodoro = result.showEndPomodoro ?? true;
+
+        if (!showEndCycle && !showEndPomodoro) {
             endPomodoroButton.style.display = "none";
             endCycle.style.display = "none";
+            return;
         }
+
+        chrome.storage.sync.get('timer', (data) => {
+            const isTimerOn = data.timer;
+
+            if (!isTimerOn) {
+                endCycle.style.display = "none";
+                endPomodoroButton.style.display = showEndPomodoro ? "block" : "none";
+                if (showEndPomodoro) {
+                    endPomodoroButton.innerHTML = `Switch to ${modeString.toLowerCase()} mode`;
+                    endPomodoroButton.onclick = () => {
+                        chrome.storage.sync.set({ mode: modeString });
+                    };
+                }
+                return;
+            }
+
+            endCycle.style.display = showEndCycle ? "block" : "none";
+            if (showEndCycle) {
+                endCycle.onclick = () => {
+                    chrome.runtime.sendMessage({ cmd: 'SKIP_CYCLE' });
+                };
+            }
+
+            endPomodoroButton.style.display = showEndPomodoro ? "block" : "none";
+            if (showEndPomodoro) {
+                endPomodoroButton.onclick = () => {
+                    chrome.runtime.sendMessage({ cmd: 'STOP_TIMER' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.error('Error in Dove extension:', chrome.runtime.lastError);
+                        } else if (response && response.status === 'success') {
+                            chrome.storage.sync.set({ mode: modeString });
+                        }
+                    });
+                };
+            }
+        });
     });
 }
 
@@ -639,6 +608,7 @@ function loadWorkTab() {
 }
 
 function loadChangedWorkTab() {
+    countdownTimerRefs = null; // leaving the countdown view
     doChangedTab(true);
 }
 
@@ -649,11 +619,13 @@ function loadRestTab() {
 }
 
 function loadChangedRestTab() {
+    countdownTimerRefs = null; // leaving the countdown view
     doChangedTab(false);
 }
 
-// SETTINGS
+// ---------------- SETTINGS ----------------
 function loadSettings() {
+    countdownTimerRefs = null; // leaving the countdown view
     function onOrOffButton(storageVar, elementId) {
         const toggleInteractionElem = document.getElementById(elementId);
         chrome.storage.local.get(storageVar, (result) => {
@@ -668,26 +640,4 @@ function loadSettings() {
     onOrOffButton('showEndPomodoro', 'endPomodoroOnOff');
     onOrOffButton('showEndCycle', 'endCycleOnOff');
     onOrOffButton('showDeleteBin', 'unblockOnOff');
-}
-
-function getMinutesHours(event) {
-    const decimalHours = event.target.value;
-    const n = new Date(0,0);
-    n.setMinutes(+Math.round(decimalHours * 60));
-    const hours = n.getHours();
-    const minutes = n.getMinutes();
-    return [hours, minutes];
-}
-
-function checkIfBackgroundScriptWorks(message) {
-    if (chrome.runtime.lastError) {
-        // Create a notification to inform the user
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/icons/doveLogo128.png',
-            title: 'Dove Reminder Issue',
-            message: message,
-            priority: 2
-        });
-    }
 }

@@ -118,7 +118,7 @@ button {
     transition: background-color 0.3s ease;
 }
 
-#deleteButton {
+.delete-button {
     background-image: url('/images/trashClosed.png');
     width: 25px;
     height: 45px;
@@ -129,7 +129,7 @@ button {
     background-color: transparent;
 }
 
-#deleteButton:hover {
+.delete-button:hover {
     background-image: url('/images/trashOpen.png');
     width: 30px;
     height: 50px;
@@ -235,7 +235,7 @@ span {
     word-wrap:break-word;
 }
 
-#bulletPoint {
+.bullet-point {
     width: 25px;
     height: 25px;
     background-image: url('/images/draggableBulletUI.png');

@@ -223,3 +223,9 @@ chrome.storage.onChanged.addListener(async (changes) => {
         updateBlockedSites();
     }
 });
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.alarms.clearAll();
+    chrome.action.setBadgeText({ text: "" });
+    chrome.storage.session.clear();
+});
