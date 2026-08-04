@@ -1,7 +1,7 @@
 {
     "name": "Dove: Pomodoro Timer & Website Blocker",
     "version": "1.0.0",
-    "description": "Auto-blocks distracting sites during work sprints, unblocks during breaks. Pomodoro timer + task list + a dove mascot cheering you on.",
+    "description": "Blocks distractions while you work, unblocks on breaks. Pomodoro timer + task list + a dove mascot cheering you on.",
     "manifest_version": 3,
     "author": "Arianna Mulligan",
     "permissions": ["storage", "declarativeNetRequest", "declarativeNetRequestWithHostAccess", "notifications", "alarms"],
